@@ -1,0 +1,93 @@
+package ws
+
+import (
+	"log"
+	"os"
+	"time"
+
+	"github.com/LaLoca1/binance-l2-collector/internal/parser"
+	"github.com/gorilla/websocket"
+)
+
+// This defines a client struct
+type Client struct {
+	conn *websocket.Conn // A websocket connection object
+	url  string          // Binance websocket URL this client connects to
+}
+
+// NewClient creates a new WebSocket client with the given URL
+// A constructor function to create a new client. Takes in the WebSocket URL and returns a pointer
+// to a new Client with url set and conn still nil.
+func NewClient(url string) *Client {
+	return &Client{url: url}
+}
+
+// Connect establishes the WebSocket connection to Binance
+func (c *Client) Connect() error {
+	// Tries to open a WebSocket connetion to the Binance stream URL stored in c.curl
+	// Websocket.DefaultDialer.Dail initiates the connection. Returns 3 values: conn, _ httpresponse is not required, err:any connection error
+	conn, _, err := websocket.DefaultDialer.Dial(c.url, nil)
+	if err != nil {
+		return err
+	}
+	// If successful, store the connection object in the Client struct and log a message.
+	c.conn = conn
+	log.Println("Connected to Binance WebSocket.")
+	return nil
+}
+
+// Listen starts reading from the WebSocket and parses the depth messages
+// Starts listening to incoming messages. Interrupt is a channel used to gracefully shut down (pass it from main.go)
+func (c *Client) Listen(interrupt chan os.Signal) {
+	// done is a channel used to signal when the listener go routine ends
+	done := make(chan struct{})
+	// Starts a new goroutine (a lightweight thread) to read messages continuously in background.
+	go func() {
+		// Ensures that once this goroutine exits, the done channel is closed so main function knows its finished.
+		defer close(done)
+		for {
+			// continously read messages from the websocket. First return value (message type) is ignored (_) because we only care
+			// about message content. Message is the raw JSON payload sent by Binance.
+			_, message, err := c.conn.ReadMessage()
+			if err != nil {
+				log.Printf("Read error: %v", err)
+				return
+			}
+
+			// Call the custom parser function to convert the raw JSON into a structured DepthUpdateMessage GO struct.
+			parsed, err := parser.ParseDepthUpdate(message)
+			if err != nil {
+				log.Printf("Parse error: %v", err)
+				continue
+			}
+
+			log.Printf("Depth Update - Symbol: %s | Bids: %d | Asks: %d", parsed.Symbol, len(parsed.Bids), len(parsed.Asks))
+		}
+	}()
+
+	// Graceful shutdown logic
+	// A blocking loop that waits for either:
+	// - The listener goroutine to finish (via done) or the user to press CTRL+C (via interrupt)
+	for {
+		select {
+		case <-done:
+			return
+		case <-interrupt:
+			log.Println("Interrupt received, closing connection...")
+			err := c.conn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
+			if err != nil {
+				log.Printf("Close error: %v", err)
+			}
+			time.Sleep(time.Second)
+			return
+		}
+	}
+}
+
+// Summary
+// 1) Creates a WebSocket client for Binance.
+// 2) Connects to the Binance depth update stream.
+// 3) Reads messages continuosly in a goroutine.
+// 4) Parses the JSON payloads into structured Go data.
+// 5) Logs numbers of bids and asks received.
+// 6) Handles errores and shutdowns gracefully
