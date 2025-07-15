@@ -1,37 +1,14 @@
-package db
+package storage
 
 import (
-	"context"
-	"fmt"
-	"time"
-
 	"github.com/redis/go-redis/v9"
 )
 
-var ctx = context.Background()
-
-type RedisStore struct {
-	Client *redis.Client
-}
-
-func NewRedisStore(addr string) *RedisStore {
+func NewRedisClient() *redis.Client {
 	rdb := redis.NewClient(&redis.Options{
-		Addr:     addr, // "localhost:6379"
-		Password: "",   // no password set
-		DB:       0,    // use default DB
+		Addr:     "localhost:6379", // adjust if using Docker or Redis cloud
+		Password: "",               // no password by default
+		DB:       0,                // use default DB
 	})
-
-	return &RedisStore{Client: rdb}
-}
-
-func (r *RedisStore) SaveOrderBook(symbol string, bids, asks [][]string) error {
-	key := fmt.Sprintf("orderbook:%s", symbol)
-
-	data := map[string]interface{}{
-		"bids": bids,
-		"asks": asks,
-		"ts":   time.Now().UnixMilli(),
-	}
-
-	return r.Client.HSet(ctx, key, data).Err()
+	return rdb
 }
