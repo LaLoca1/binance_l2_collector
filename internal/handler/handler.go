@@ -1,29 +1,25 @@
-package hander
+package handler
 
 import (
 	"context"
+	"encoding/json"
+	"fmt"
 	"log"
 
+	"github.com/LaLoca1/binance-l2-collector/internal/db"
 	"github.com/LaLoca1/binance-l2-collector/internal/parser"
-	"github.com/redis/go-redis/v9"
 )
 
-func HandleDepthMessage(msg []byte, rdb *redis.Client) {
-	depth, err := parser.ParseDepthUpdate(msg)
+func HandleDepthMessage(msg *parser.DepthUpdateMessage, redisStore *db.RedisStore) {
+	data, err := json.Marshal(msg)
 	if err != nil {
-		log.Printf("Failed to parse message: %v", err)
+		log.Printf("Error marshalling depth update: %v", err)
 		return
 	}
 
-	key := "orderbook:" + depth.Symbol + ":latest"
-	err = rdb.HSet(context.Background(), key, map[string]interface{}{
-		"bids": depth.Bids,
-		"asks": depth.Asks,
-	}).Err()
+	key := fmt.Sprintf("depth:%s", msg.Symbol)
+	err = redisStore.Client.Set(context.Background(), key, data, 0).Err()
 	if err != nil {
-		log.Printf("Failed to store in Redis: %v", err)
-		return
+		log.Printf("Error storing depth update to Redis: %v", err)
 	}
-
-	log.Println("Stored depth update in Redis for", depth.Symbol)
 }

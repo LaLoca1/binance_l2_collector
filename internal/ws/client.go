@@ -5,8 +5,9 @@ import (
 	"os"
 	"time"
 
-	"github.com/LaLoca1/binance-l2-collector/internal/parser"
+	"github.com/LaLoca1/binance-l2-collector/internal/db"
 	"github.com/LaLoca1/binance-l2-collector/internal/handler"
+	"github.com/LaLoca1/binance-l2-collector/internal/parser"
 	"github.com/gorilla/websocket"
 )
 
@@ -39,7 +40,7 @@ func (c *Client) Connect() error {
 
 // Listen starts reading from the WebSocket and parses the depth messages
 // Starts listening to incoming messages. Interrupt is a channel used to gracefully shut down (pass it from main.go)
-func (c *Client) Listen(interrupt chan os.Signal) {
+func (c *Client) Listen(interrupt chan os.Signal, redisStore *db.RedisStore) {
 	// done is a channel used to signal when the listener go routine ends
 	done := make(chan struct{})
 	// Starts a new goroutine (a lightweight thread) to read messages continuously in background.
@@ -62,7 +63,7 @@ func (c *Client) Listen(interrupt chan os.Signal) {
 				continue
 			}
 
-			log.Printf("Depth Update - Symbol: %s | Bids: %d | Asks: %d", parsed.Symbol, len(parsed.Bids), len(parsed.Asks))
+			handler.HandleDepthMessage(parsed, redisStore)
 		}
 	}()
 
