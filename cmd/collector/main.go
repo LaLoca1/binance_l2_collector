@@ -19,7 +19,7 @@ func main() {
 	signal.Notify(interrupt, os.Interrupt)
 
 	// Setup Redis connection
-	redisStore := db.NewRedisStore("localhost:6379", "", 0)
+	redisStore := db.NewRedisStore("redis:6379", "", 0)
 
 	// Setup WebSocket client
 	client := ws.NewClient(streamURL)
