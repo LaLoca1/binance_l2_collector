@@ -62,7 +62,7 @@ func (c *Client) Listen(interrupt chan os.Signal, redisStore *db.RedisStore) {
 				log.Printf("Parse error: %v", err)
 				continue
 			}
-
+			// If parsing works, we send the parsed message to the handler which stores it in Redis. 
 			handler.HandleDepthMessage(parsed, redisStore)
 		}
 	}()
@@ -87,9 +87,10 @@ func (c *Client) Listen(interrupt chan os.Signal, redisStore *db.RedisStore) {
 }
 
 // Summary
-// 1) Creates a WebSocket client for Binance.
-// 2) Connects to the Binance depth update stream.
-// 3) Reads messages continuosly in a goroutine.
-// 4) Parses the JSON payloads into structured Go data.
-// 5) Logs numbers of bids and asks received.
-// 6) Handles errores and shutdowns gracefully
+// 1) Client Struct holds the connection and stream URL 
+// 2) NewClient sets up a client (but doesn't connect yet)
+// 3) Connect opens a WebSocket to Binance 
+// 4) Listen does the heavy lifting:
+// - Reads messages continously in a goroutine 
+// - Parses them from JSON
+// - Sends parsed messages to the handler
