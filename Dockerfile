@@ -1,7 +1,5 @@
 FROM golang:1.23.4-alpine
 
-ENV CG0_ENABLED=0 
-
 WORKDIR /app 
 
 COPY go.mod go.sum ./

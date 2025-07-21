@@ -94,3 +94,15 @@ func (c *Client) Listen(interrupt chan os.Signal, redisStore *db.RedisStore) {
 // - Reads messages continously in a goroutine 
 // - Parses them from JSON
 // - Sends parsed messages to the handler
+
+// How the go routines/channels work 
+// 1) Creates interrupt channel 
+// 2) Starts WebSocket Client 
+// 3) Starts a goroutine: 
+// - Reads Binance Messages 
+// --- It parses
+// --- Stores in Redis 
+// Waits for:
+// --- done <- reading stopped (error or close)
+// --- interrupt <- user pressed CTRL+C 
+//		--- closes WebSocket properly. 

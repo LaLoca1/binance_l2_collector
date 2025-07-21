@@ -2,10 +2,10 @@ package main
 
 import (
 	"log"
-	"net/http"
 	"os"
 	"os/signal"
 
+	"github.com/LaLoca1/binance-l2-collector/internal/api"
 	"github.com/LaLoca1/binance-l2-collector/internal/db"
 	"github.com/LaLoca1/binance-l2-collector/internal/ws"
 )
@@ -21,9 +21,13 @@ func main() {
 	// lets you gracefully shut down the WebSocket client later
 	signal.Notify(interrupt, os.Interrupt)
 
+	redisAddr := os.Getenv("REDIS_ADDR")
+	if redisAddr == "" {
+		redisAddr = "localhost:6379" // fallback
+	}
 	// This calls the custom function initialize a redis client
 	// returns a *RedisStore struct with a redis client you can use throughout app
-	redisStore := db.NewRedisStore("redis:6379", "", 0)
+	redisStore := db.NewRedisStore(redisAddr, "", 0)
 
 	// Calls the constructor NewClient(from internal ws package) with Binance URL
 	// Sets sets the websocket url field in the client. its just created - not connected yet.
@@ -35,18 +39,9 @@ func main() {
 		log.Fatalf("WebSocket connection failed: %v", err)
 	}
 
-	// This starts a new goroutine to run a simple HTTP server
-	// Adds an endpoint at /health & used by Docker to check if its working properly.
-	go func() {
-		http.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-			w.WriteHeader(http.StatusOK)
-			w.Write([]byte("ok"))
-		})
-		log.Println("Healthcheck endpoint running on :8080")
-		if err := http.ListenAndServe(":8080", nil); err != nil {
-			log.Fatalf("Healthcheck server failed: %v", err)
-		}
-	}()
+	// Start HTTP API server (includes /health and /orderbook routes)
+	apiServer := api.NewAPI(redisStore)
+	go apiServer.StartServer(":8080")
 
 	// Interrupt channel -> so it knows when the shut down
 	// RedisStore -> so it can store parsed messages in Redis
