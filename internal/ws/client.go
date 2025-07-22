@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/LaLoca1/binance-l2-collector/internal/db"
-	"github.com/LaLoca1/binance-l2-collector/internal/handler"
 	"github.com/LaLoca1/binance-l2-collector/internal/parser"
 	"github.com/gorilla/websocket"
 )
@@ -62,8 +61,8 @@ func (c *Client) Listen(interrupt chan os.Signal, redisStore *db.RedisStore) {
 				log.Printf("Parse error: %v", err)
 				continue
 			}
-			// If parsing works, we send the parsed message to the handler which stores it in Redis. 
-			handler.HandleDepthMessage(parsed, redisStore)
+			// If parsing works, we send the parsed message to the handler which stores it in Redis.
+			parser.HandleDepthMessage(parsed, redisStore)
 		}
 	}()
 
@@ -87,22 +86,22 @@ func (c *Client) Listen(interrupt chan os.Signal, redisStore *db.RedisStore) {
 }
 
 // Summary
-// 1) Client Struct holds the connection and stream URL 
+// 1) Client Struct holds the connection and stream URL
 // 2) NewClient sets up a client (but doesn't connect yet)
-// 3) Connect opens a WebSocket to Binance 
+// 3) Connect opens a WebSocket to Binance
 // 4) Listen does the heavy lifting:
-// - Reads messages continously in a goroutine 
+// - Reads messages continously in a goroutine
 // - Parses them from JSON
 // - Sends parsed messages to the handler
 
-// How the go routines/channels work 
-// 1) Creates interrupt channel 
-// 2) Starts WebSocket Client 
-// 3) Starts a goroutine: 
-// - Reads Binance Messages 
+// How the go routines/channels work
+// 1) Creates interrupt channel
+// 2) Starts WebSocket Client
+// 3) Starts a goroutine:
+// - Reads Binance Messages
 // --- It parses
-// --- Stores in Redis 
+// --- Stores in Redis
 // Waits for:
 // --- done <- reading stopped (error or close)
-// --- interrupt <- user pressed CTRL+C 
-//		--- closes WebSocket properly. 
+// --- interrupt <- user pressed CTRL+C
+//		--- closes WebSocket properly.
