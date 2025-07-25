@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/LaLoca1/binance-l2-collector/internal/db"
-	"github.com/LaLoca1/binance-l2-collector/internal/parser"
+	"github.com/LaLoca1/binance-l2-collector/pkg/parser"
 	"github.com/gorilla/websocket"
 )
 

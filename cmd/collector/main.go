@@ -5,9 +5,9 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/LaLoca1/binance-l2-collector/internal/api"
 	"github.com/LaLoca1/binance-l2-collector/internal/db"
-	"github.com/LaLoca1/binance-l2-collector/internal/ws"
+	"github.com/LaLoca1/binance-l2-collector/pkg/api"
+	"github.com/LaLoca1/binance-l2-collector/pkg/ws"
 )
 
 // Storing the WebSocket URL as constant string. This the Binance feed for BTC/USDT order
