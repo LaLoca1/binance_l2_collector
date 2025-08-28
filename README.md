@@ -26,6 +26,7 @@ You are collecting **Level 2 (L2)** data — which gives you **full market depth
 
 When collecting the L2 data, a **stream of JSON messages** appears like this:
 
+```json
 {
   "e": "depthUpdate",    // event type
   "E": 123456789,        // event time
@@ -41,3 +42,4 @@ When collecting the L2 data, a **stream of JSON messages** appears like this:
     ...
   ]
 }
+
