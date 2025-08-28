@@ -7,7 +7,6 @@ import (
 	"log"
 
 	"github.com/LaLoca1/binance-l2-collector/internal/db" // for working with Redis
-	//"github.com/LaLoca1/binance-l2-collector/internal/parser" // For the DepthUpdateMessage struct that represents an order book update
 )
 
 // This function takes a parsed binance and update and stores it in redis
